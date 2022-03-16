@@ -7,8 +7,8 @@ using Microsoft.ML;
 
 var datasetRelativePath = @"../../../";
 string datasetPath = GetAbsolutePath(datasetRelativePath);
-var imagesFolder = Path.Combine(datasetPath, "sample_data");
-var outputFolder = Path.Combine(datasetPath, "sample_data", "outputs");
+var imagesFolder = Path.Combine(datasetPath, "SampleData");
+var outputFolder = Path.Combine(datasetPath, "SampleData", "Outputs");
 
 // Initialize MLContext
 MLContext mlContext = new();
