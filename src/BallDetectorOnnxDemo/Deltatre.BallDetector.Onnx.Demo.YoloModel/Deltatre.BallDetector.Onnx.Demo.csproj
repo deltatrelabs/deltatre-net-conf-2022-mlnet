@@ -17,28 +17,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Assets\ModelWeights\yolov5n.onnx" />
-    <None Remove="Assets\ModelWeights\yolov5n6.onnx" />
-    <None Remove="Assets\ModelWeights\yolov5s.onnx" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="Assets\ModelWeights\yolov5n.onnx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\ModelWeights\yolov5n6.onnx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\ModelWeights\yolov5s.onnx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.ML" Version="1.7.1" />
     <PackageReference Include="Microsoft.ML.ImageAnalytics" Version="1.7.1" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.10.0" />
     <PackageReference Include="Microsoft.ML.OnnxTransformer" Version="1.7.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Assets\ModelWeights\yolov5n.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\ModelWeights\yolov5n6.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\ModelWeights\yolov5s.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\ModelWeights\yolov5x6.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
