@@ -6,6 +6,7 @@ namespace Deltatre.BallDetector.Onnx.Demo.Model
     {
         public int ModelInputWidth { get; set; }
         public int ModelInputHeight { get; set; }
+        public bool ResizeDetections { get; set; }
         public string ImagePath { get; set; }
         public string ImageName { get; set; }
         public IEnumerable<YoloPrediction> DetectedObjects { get; set; }

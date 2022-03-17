@@ -9,6 +9,7 @@ namespace Deltatre.BallDetector.Onnx.Demo.MLModels.Abstract
     /// </summary>
     public abstract class YoloModel
     {
+        public abstract string Name { get; set; }
         public abstract string ModelWeightsFilePath { get; set; }
 
         public abstract int Width { get; set; }

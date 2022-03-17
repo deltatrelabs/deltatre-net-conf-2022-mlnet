@@ -82,13 +82,24 @@ namespace Deltatre.BallDetector.Onnx.Demo
         private IEnumerable<ImagePrediction> PredictDataUsingModel(IDataView testData)
         {
             var results = new List<ImagePrediction>();
-            var data = m_mlContext.Data.CreateEnumerable<ImageData>(testData, reuseRowObject: false);
-            
+
+            // Measure prediction execution time
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            var data = m_mlContext.Data.CreateEnumerable<ImageData>(testData, reuseRowObject: true);
+
+            int counter = 0;
             foreach (var imageData in data)
             {
                 using var image = Image.FromFile(imageData.ImagePath);
-                results.Add(new ImagePrediction { ImagePath = imageData.ImagePath, DetectedObjects = m_outputParser.ParseOutput(Inference(image), image), ImageName = imageData.Label, ModelInputWidth = m_model.Width, ModelInputHeight = m_model.Height });
+                results.Add(new ImagePrediction { ImagePath = imageData.ImagePath, DetectedObjects = m_outputParser.ParseOutput(Inference(image), image.Width, image.Height), ImageName = imageData.Label, ModelInputWidth = m_model.Width, ModelInputHeight = m_model.Height, ResizeDetections = false });
+                counter++;
             }
+
+            // Stop measuring time
+            watch.Stop();
+
+            Console.WriteLine($"Predictions took {watch.ElapsedMilliseconds}ms ({watch.ElapsedMilliseconds / counter}ms per prediction)");
 
             return results;
         }
@@ -183,7 +194,7 @@ namespace Deltatre.BallDetector.Onnx.Demo
             };
 
             resized?.Dispose();
-
+            
             return output.ToArray();
         }
         #endregion

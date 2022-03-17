@@ -54,57 +54,65 @@ namespace Deltatre.BallDetector.Onnx.Demo.Model
         /// <summary>
         /// Parses network outputs (sigmoid or detection layer) to predictions
         /// </summary>
-        public IEnumerable<YoloPrediction> ParseOutput(DenseTensor<float>[] output, Image image)
+        public IEnumerable<YoloPrediction> ParseOutput(DenseTensor<float>[] output, int imageWidth, int imageHeight)
         {
-            return Suppress(m_model.UseDetect ? ParseDetect(output[0], image) : ParseSigmoid(output, image));
+            return Suppress(m_model.UseDetect ? ParseDetect(output[0], imageWidth, imageHeight) : ParseSigmoid(output, imageWidth, imageHeight));
         }
 
         /// <summary>
         /// Parses network output (detection) to predictions
         /// </summary>
-        private IEnumerable<YoloPrediction> ParseDetect(DenseTensor<float> output, Image image)
+        private IEnumerable<YoloPrediction> ParseDetect(DenseTensor<float> output, int imageWidth, int imageHeight)
         {
             var result = new ConcurrentBag<YoloPrediction>();
 
-            var (w, h) = (image.Width, image.Height); // image w and h
+            var (w, h) = (imageWidth, imageHeight); // image w and h
             var (xGain, yGain) = (m_model.Width / (float)w, m_model.Height / (float)h); // x, y gains
             var gain = Math.Min(xGain, yGain); // gain = resized / original
 
             var (xPad, yPad) = ((m_model.Width - w * gain) / 2, (m_model.Height - h * gain) / 2); // left, right pads
 
-            Parallel.For(0, (int)output.Length / m_model.Dimensions, (i) =>
+            using (var f = new StreamWriter($"tmp_debug_{m_model.Name}.txt"))
             {
-                if (output[0, i, 4] <= m_model.Confidence) return; // skip low obj_conf results
-
-                Parallel.For(5, m_model.Dimensions, (j) =>
+                for (int i = 0; i < output.Length / m_model.Dimensions; i++)
                 {
-                    output[0, i, j] = output[0, i, j] * output[0, i, 4]; // mul_conf = obj_conf * cls_conf
-                });
+                    for (int j = 0; j < m_model.Dimensions; j++)
+                        f.WriteLine(output[0, i, j]);
+                }
+            }
+            //Parallel.For(0, (int)output.Length / m_model.Dimensions, (i) =>
+            //{
+            //    if (output[0, i, 4] <= m_model.Confidence) return; // skip low obj_conf results
 
-                Parallel.For(5, m_model.Dimensions, (k) =>
-                {
-                    if (output[0, i, k] <= m_model.MulConfidence) return; // skip low mul_conf results
+            //    Parallel.For(5, m_model.Dimensions, (j) =>
+            //    {
+            //        output[0, i, j] = output[0, i, j] * output[0, i, 4]; // mul_conf = obj_conf * cls_conf
+            //    });
 
-                    float xMin = ((output[0, i, 0] - output[0, i, 2] / 2) - xPad) / gain; // unpad bbox tlx to original
-                    float yMin = ((output[0, i, 1] - output[0, i, 3] / 2) - yPad) / gain; // unpad bbox tly to original
-                    float xMax = ((output[0, i, 0] + output[0, i, 2] / 2) - xPad) / gain; // unpad bbox brx to original
-                    float yMax = ((output[0, i, 1] + output[0, i, 3] / 2) - yPad) / gain; // unpad bbox bry to original
+            //    Parallel.For(5, m_model.Dimensions, (k) =>
+            //    {
+            //        if (output[0, i, k] <= m_model.MulConfidence) return; // skip low mul_conf results
 
-                    xMin = YoloParser<T>.Clamp(xMin, 0, w - 0); // clip bbox tlx to boundaries
-                    yMin = YoloParser<T>.Clamp(yMin, 0, h - 0); // clip bbox tly to boundaries
-                    xMax = YoloParser<T>.Clamp(xMax, 0, w - 1); // clip bbox brx to boundaries
-                    yMax = YoloParser<T>.Clamp(yMax, 0, h - 1); // clip bbox bry to boundaries
+            //        float xMin = ((output[0, i, 0] - output[0, i, 2] / 2) - xPad) / gain; // unpad bbox tlx to original
+            //        float yMin = ((output[0, i, 1] - output[0, i, 3] / 2) - yPad) / gain; // unpad bbox tly to original
+            //        float xMax = ((output[0, i, 0] + output[0, i, 2] / 2) - xPad) / gain; // unpad bbox brx to original
+            //        float yMax = ((output[0, i, 1] + output[0, i, 3] / 2) - yPad) / gain; // unpad bbox bry to original
 
-                    YoloLabel label = m_model.Labels[k - 5];
+            //        xMin = YoloParser<T>.Clamp(xMin, 0, w - 0); // clip bbox tlx to boundaries
+            //        yMin = YoloParser<T>.Clamp(yMin, 0, h - 0); // clip bbox tly to boundaries
+            //        xMax = YoloParser<T>.Clamp(xMax, 0, w - 1); // clip bbox brx to boundaries
+            //        yMax = YoloParser<T>.Clamp(yMax, 0, h - 1); // clip bbox bry to boundaries
 
-                    var prediction = new YoloPrediction(label, output[0, i, k])
-                    {
-                        Rectangle = new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin)
-                    };
+            //        YoloLabel label = m_model.Labels[k - 5];
 
-                    result.Add(prediction);
-                });
-            });
+            //        var prediction = new YoloPrediction(label, output[0, i, k])
+            //        {
+            //            Rectangle = new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin)
+            //        };
+
+            //        result.Add(prediction);
+            //    });
+            //});
 
             return result;
         }
@@ -112,11 +120,11 @@ namespace Deltatre.BallDetector.Onnx.Demo.Model
         /// <summary>
         /// Parses network outputs (sigmoid) to predictions
         /// </summary>
-        private IEnumerable<YoloPrediction> ParseSigmoid(DenseTensor<float>[] output, Image image)
+        private IEnumerable<YoloPrediction> ParseSigmoid(DenseTensor<float>[] output, int imageWidth, int imageHeight)
         {
             var result = new ConcurrentBag<YoloPrediction>();
 
-            var (w, h) = (image.Width, image.Height); // image w and h
+            var (w, h) = (imageWidth, imageHeight); // image w and h
             var (xGain, yGain) = (m_model.Width / (float)w, m_model.Height / (float)h); // x, y gains
             var gain = Math.Min(xGain, yGain); // gain = resized / original
 

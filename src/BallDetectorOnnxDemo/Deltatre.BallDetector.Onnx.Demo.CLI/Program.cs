@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Diagnostics;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using Deltatre.BallDetector.Onnx.Demo;
 using Deltatre.BallDetector.Onnx.Demo.MLModels;
@@ -25,19 +26,15 @@ try
     Console.WriteLine("===== Identify objects in the images =====");
     Console.WriteLine("");
 
-    //// Create instance of model scorer (using ML.NET OnnxTransform)
-    //var modelScorer1 = new OnnxTransformModelScorer<Yolov5x6Model>(mlContext);
+    // Create instance of model scorer (using ML.NET OnnxTransform)
+    var modelScorer = new OnnxTransformModelScorer<Yolov5sModel>(mlContext);
 
     // Create instance of model scorer (using OnnxRuntime)
-    var modelScorer2 = new OnnxRuntimeModelScorer<Yolov5x6Model>(mlContext);
+    //var modelScorer = new OnnxRuntimeModelScorer<Yolov5sModel>(mlContext);
 
-    //// Use model to score data
-    //var results1 = modelScorer1.Score(imageDataView);
-    //LogDetectedObjects(results1);
-
-    var results2 = modelScorer2.Score(imageDataView);
-    LogDetectedObjects(results2);
-
+    // Use model to score data
+    var results = modelScorer.Score(imageDataView);
+    LogDetectedObjects(results);
 }
 catch (Exception ex)
 {
@@ -68,43 +65,54 @@ void DrawBoundingBox(string outputImageLocation, ImagePrediction prediction)
     Font drawFont = new("Arial", 12, FontStyle.Bold);
     SolidBrush fontBrush = new(Color.Black);
 
-    foreach (var box in prediction.DetectedObjects)
+    using (Graphics graphics = Graphics.FromImage(image))
     {
-        // Get Bounding Box Dimensions
-        var x = (uint)Math.Max(box.Rectangle.X, 0);
-        var y = (uint)Math.Max(box.Rectangle.Y, 0);
-        var width = (uint)Math.Min(originalImageWidth - x, box.Rectangle.Width);
-        var height = (uint)Math.Min(originalImageHeight - y, box.Rectangle.Height);
+        graphics.CompositingQuality = CompositingQuality.HighQuality;
+        graphics.SmoothingMode = SmoothingMode.HighQuality;
+        graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
 
-        // Resize To Image
-        //x = (uint)originalImageWidth * x / (uint)prediction.ModelInputWidth;
-        //y = (uint)originalImageHeight * y / (uint)prediction.ModelInputHeight;
-        //width = (uint)originalImageWidth * width / (uint)prediction.ModelInputWidth;
-        //height = (uint)originalImageHeight * height / (uint)prediction.ModelInputHeight;
-
-        // Bounding Box Text
-        string text = $"{box.Label.Name} ({box.Score * 100:0}%)";
-
-        using (Graphics thumbnailGraphic = Graphics.FromImage(image))
+        foreach (var box in prediction.DetectedObjects)
         {
-            thumbnailGraphic.CompositingQuality = CompositingQuality.HighQuality;
-            thumbnailGraphic.SmoothingMode = SmoothingMode.HighQuality;
-            thumbnailGraphic.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            try
+            {
+                // Get Bounding Box Dimensions
+                var x = (uint)Math.Max(box.Rectangle.X, 0);
+                var y = (uint)Math.Max(box.Rectangle.Y, 0);
+                var width = (uint)Math.Min(originalImageWidth - x, box.Rectangle.Width);
+                var height = (uint)Math.Min(originalImageHeight - y, box.Rectangle.Height);
 
-            // Define Text Options
-            SizeF size = thumbnailGraphic.MeasureString(text, drawFont);
-            Point atPoint = new Point((int)x, (int)y - (int)size.Height - 1);
+                // Resize To Image 8if needed)
+                if (prediction.ResizeDetections)
+                {
+                    x = (uint)originalImageWidth * x / (uint)prediction.ModelInputWidth;
+                    y = (uint)originalImageHeight * y / (uint)prediction.ModelInputHeight;
+                    width = (uint)originalImageWidth * width / (uint)prediction.ModelInputWidth;
+                    height = (uint)originalImageHeight * height / (uint)prediction.ModelInputHeight;
+                }
 
-            // Define BoundingBox options
-            Pen pen = new Pen(box.Label.Color, 3.2f);
-            SolidBrush colorBrush = new SolidBrush(box.Label.Color);
+                // Bounding Box Text
+                string text = $"{box.Label.Name} ({box.Score * 100:0}%)";
 
-            // Draw text on image 
-            thumbnailGraphic.FillRectangle(colorBrush, (int)x, (int)(y - size.Height - 1), (int)size.Width, (int)size.Height);
-            thumbnailGraphic.DrawString(text, drawFont, fontBrush, atPoint);
+                // Define Text Options
+                SizeF size = graphics.MeasureString(text, drawFont);
+                Point atPoint = new Point((int)x, (int)y - (int)size.Height - 1);
 
-            // Draw bounding box on image
-            thumbnailGraphic.DrawRectangle(pen, x, y, width, height);
+                // Define BoundingBox options
+                Pen pen = new Pen(box.Label.Color, 3.2f);
+                SolidBrush colorBrush = new SolidBrush(box.Label.Color);
+
+                // Draw text on image 
+                graphics.FillRectangle(colorBrush, (int)x, (int)(y - size.Height - 1), (int)size.Width, (int)size.Height);
+                graphics.DrawString(text, drawFont, fontBrush, atPoint);
+
+                // Draw bounding box on image
+                graphics.DrawRectangle(pen, x, y, width, height);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(box.Label);
+                throw;
+            }
         }
     }
 

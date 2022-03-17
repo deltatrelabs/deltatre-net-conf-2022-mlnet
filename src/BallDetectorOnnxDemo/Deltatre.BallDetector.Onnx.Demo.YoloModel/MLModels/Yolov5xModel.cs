@@ -8,6 +8,7 @@ namespace Deltatre.BallDetector.Onnx.Demo.MLModels
     public class Yolov5xModel : YoloModel
     {
         //https://github.com/ultralytics/yolov5/blob/master/models/yolov5x.yaml
+        public override string Name { get; set; } = "Yolov5x";
         public override string ModelWeightsFilePath { get; set; } = "Assets/ModelWeights/yolov5x.onnx";
 
         public override int Width { get; set; } = 640;

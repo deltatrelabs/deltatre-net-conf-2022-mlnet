@@ -4,17 +4,20 @@ namespace Deltatre.BallDetector.Onnx.Demo
 {
     using System;
     using System.Collections.Generic;
+    using System.Drawing;
     using System.Linq;
     using Deltatre.BallDetector.Onnx.Demo.MLModels.Abstract;
     using Deltatre.BallDetector.Onnx.Demo.Model;
     using Microsoft.ML;
     using Microsoft.ML.Data;
+    using Microsoft.ML.OnnxRuntime.Tensors;
 
     public class OnnxTransformModelScorer<T> : IDisposable where T : YoloModel
     {
         #region Private fields
         private readonly MLContext m_mlContext;
         private readonly T m_model;
+        private readonly YoloParser<T> m_outputParser;
         private bool m_disposedValue;
         #endregion
 
@@ -23,6 +26,7 @@ namespace Deltatre.BallDetector.Onnx.Demo
         {
             m_mlContext = mlContext;
             m_model = Activator.CreateInstance<T>();
+            m_outputParser = new YoloParser<T>(m_model);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -61,33 +65,9 @@ namespace Deltatre.BallDetector.Onnx.Demo
         /// </summary>
         public IEnumerable<ImagePrediction> Score(IDataView data)
         {
-            var results = new List<ImagePrediction>();
-
             var model = LoadModel(m_model.ModelWeightsFilePath);
 
-            var modelOutputs = PredictDataUsingModel(data, model);
-
-            //public IList<YoloBoundingBox> ParseOutputs(float[] yoloModelOutputs, float threshold = .3F)
-
-            //// Post-process model output
-            //YoloOutputParser parser = new YoloOutputParser();
-
-            //var boundingBoxes =
-            //    probabilities
-            //    .Select(probability => parser.ParseOutputs(probability))
-            //    .Select(boxes => parser.FilterBoundingBoxes(boxes, 5, .5F));
-
-            //// Draw bounding boxes for detected objects in each of the images
-            //for (var i = 0; i < images.Count(); i++)
-            //{
-            //    string imageFileName = images.ElementAt(i).Label;
-            //    IList<YoloBoundingBox> detectedObjects = boundingBoxes.ElementAt(i);
-
-            //    DrawBoundingBox(imagesFolder, outputFolder, imageFileName, detectedObjects);
-
-            //    LogDetectedObjects(imageFileName, detectedObjects);
-            //}
-            return results;
+            return PredictDataUsingModel(data, model);
         }
         #endregion
 
@@ -106,8 +86,8 @@ namespace Deltatre.BallDetector.Onnx.Demo
             // Define scoring pipeline
             var pipeline = m_mlContext.Transforms.LoadImages(outputColumnName: "images", imageFolder: string.Empty, inputColumnName: nameof(ImageData.ImagePath))
                             .Append(m_mlContext.Transforms.ResizeImages(outputColumnName: "images", imageWidth: m_model.Width, imageHeight: m_model.Height, inputColumnName: "images"))
-                            .Append(m_mlContext.Transforms.ExtractPixels(outputColumnName: "images"))
-                            .Append(m_mlContext.Transforms.ApplyOnnxModel(modelFile: modelLocation, outputColumnNames: m_model.Outputs, inputColumnNames: new[] { "images" }));
+                            .Append(m_mlContext.Transforms.ExtractPixels(outputColumnName: "images", colorsToExtract: Microsoft.ML.Transforms.Image.ImagePixelExtractingEstimator.ColorBits.Rgb, orderOfExtraction: Microsoft.ML.Transforms.Image.ImagePixelExtractingEstimator.ColorsOrder.ABGR))
+                            .Append(m_mlContext.Transforms.ApplyOnnxModel(modelFile: modelLocation, outputColumnNames: m_model.Outputs, inputColumnNames: new[] { "images" })); //, gpuDeviceId: 0, fallbackToCpu: false));
 
             // Fit scoring pipeline
             var model = pipeline.Fit(data);
@@ -115,13 +95,69 @@ namespace Deltatre.BallDetector.Onnx.Demo
             return model;
         }
 
-        private IEnumerable<float[]> PredictDataUsingModel(IDataView testData, ITransformer model)
+        internal class ModelRawPrediction {
+            public string ImagePath;
+            public string Label;
+            public float[] output;
+        }
+        private IEnumerable<ImagePrediction> PredictDataUsingModel(IDataView testData, ITransformer model)
         {
+            var results = new List<ImagePrediction>();
+
+            // Measure prediction execution time
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
             IDataView scoredData = model.Transform(testData);
 
-            IEnumerable<float[]> probabilities = scoredData.GetColumn<float[]>(m_model.Outputs[0]);
+            //var data = m_mlContext.Data.CreateEnumerable<ModelRawPrediction>(scoredData, reuseRowObject: true);
 
-            return probabilities;
+            //// see: https://docs.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/inspect-intermediate-data-ml-net
+
+            // Get DataViewSchema of IDataView
+            DataViewSchema columns = scoredData.Schema;
+
+            // Create DataViewCursor
+            int counter = 0;
+            using (DataViewRowCursor cursor = scoredData.GetRowCursor(columns))
+            {
+                // Define variables where extracted values will be stored to
+                ReadOnlyMemory<char> imagePath = default;
+                ReadOnlyMemory<char> imageLabel = default;
+                VBuffer<float> probabilities = default;
+
+                // Define delegates for extracting values from columns
+                ValueGetter<ReadOnlyMemory<char>> imagePathDelegate = cursor.GetGetter<ReadOnlyMemory<char>>(columns[0]);
+                ValueGetter<ReadOnlyMemory<char>> imageLabelDelegate = cursor.GetGetter<ReadOnlyMemory<char>>(columns[1]);
+                ValueGetter<VBuffer<float>> probabilitiesDelegate = cursor.GetGetter<VBuffer<float>>(columns[5]);
+
+                // Iterate over each row
+                while (cursor.MoveNext())
+                {
+                    // Get values from respective columns
+                    imagePathDelegate.Invoke(ref imagePath);
+                    imageLabelDelegate.Invoke(ref imageLabel);
+                    probabilitiesDelegate.Invoke(ref probabilities);
+                    var tensorDimensions = new int[] { 1, probabilities.Length / m_model.Dimensions, m_model.Dimensions };
+                    var output = new DenseTensor<float>(new Memory<float>(probabilities.GetValues().ToArray()), tensorDimensions);
+                    using var image = Image.FromFile(imagePath.ToString());
+                    results.Add(new ImagePrediction { ImagePath = imagePath.ToString(), DetectedObjects = m_outputParser.ParseOutput(new[] { output }, image.Width, image.Height), ImageName = imageLabel.ToString(), ModelInputWidth = m_model.Width, ModelInputHeight = m_model.Height, ResizeDetections = false });
+                    counter++;
+                }
+            }
+
+            //foreach (var imageData in data)
+            //{
+            //    using var image = Image.FromFile(imageData.ImagePath);
+            //    var output = new DenseTensor<float>(new Memory<float>(imageData.output), new int[] { 1, imageData.output.Length/ m_model.Dimensions, m_model.Dimensions });
+            //    results.Add(new ImagePrediction { ImagePath = imageData.ImagePath, DetectedObjects = m_outputParser.ParseOutput(new[] { output }, image.Width, image.Height), ImageName = imageData.Label, ModelInputWidth = m_model.Width, ModelInputHeight = m_model.Height, ResizeDetections = false });
+            //}
+
+
+            // Stop measuring time
+            watch.Stop();
+            Console.WriteLine($"Predictions took {watch.ElapsedMilliseconds}ms ({watch.ElapsedMilliseconds/counter}ms per prediction)");
+
+            return results;
         } 
         #endregion
     }
