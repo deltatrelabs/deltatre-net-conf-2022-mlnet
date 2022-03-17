@@ -350,6 +350,8 @@ MigrationBackup/
 .ionide/
 
 # Project Exclusions
-#SampleData/
+SampleData/
 *.jpg
+*.png
+*.zip
 *.onnx
