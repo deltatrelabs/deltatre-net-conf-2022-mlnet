@@ -3,7 +3,7 @@
 namespace Deltatre.BallDetector.Onnx.Demo.Model
 {
     using System.Drawing;
-    
+
     /// <summary>
     /// Label of detected object.
     /// </summary>

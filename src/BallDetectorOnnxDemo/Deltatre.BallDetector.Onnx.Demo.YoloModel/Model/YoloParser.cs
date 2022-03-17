@@ -72,47 +72,49 @@ namespace Deltatre.BallDetector.Onnx.Demo.Model
 
             var (xPad, yPad) = ((m_model.Width - w * gain) / 2, (m_model.Height - h * gain) / 2); // left, right pads
 
-            using (var f = new StreamWriter($"tmp_debug_{m_model.Name}.txt"))
-            {
-                for (int i = 0; i < output.Length / m_model.Dimensions; i++)
-                {
-                    for (int j = 0; j < m_model.Dimensions; j++)
-                        f.WriteLine(output[0, i, j]);
-                }
-            }
-            //Parallel.For(0, (int)output.Length / m_model.Dimensions, (i) =>
+            // For debug only
+            //using (var f = new StreamWriter($"tmp_debug_{m_model.Name}.txt"))
             //{
-            //    if (output[0, i, 4] <= m_model.Confidence) return; // skip low obj_conf results
-
-            //    Parallel.For(5, m_model.Dimensions, (j) =>
+            //    for (int i = 0; i < output.Length / m_model.Dimensions; i++)
             //    {
-            //        output[0, i, j] = output[0, i, j] * output[0, i, 4]; // mul_conf = obj_conf * cls_conf
-            //    });
+            //        for (int j = 0; j < m_model.Dimensions; j++)
+            //            f.WriteLine(output[0, i, j]);
+            //    }
+            //}
 
-            //    Parallel.For(5, m_model.Dimensions, (k) =>
-            //    {
-            //        if (output[0, i, k] <= m_model.MulConfidence) return; // skip low mul_conf results
+            Parallel.For(0, (int)output.Length / m_model.Dimensions, (i) =>
+            {
+                if (output[0, i, 4] <= m_model.Confidence) return; // skip low obj_conf results
 
-            //        float xMin = ((output[0, i, 0] - output[0, i, 2] / 2) - xPad) / gain; // unpad bbox tlx to original
-            //        float yMin = ((output[0, i, 1] - output[0, i, 3] / 2) - yPad) / gain; // unpad bbox tly to original
-            //        float xMax = ((output[0, i, 0] + output[0, i, 2] / 2) - xPad) / gain; // unpad bbox brx to original
-            //        float yMax = ((output[0, i, 1] + output[0, i, 3] / 2) - yPad) / gain; // unpad bbox bry to original
+                Parallel.For(5, m_model.Dimensions, (j) =>
+                {
+                    output[0, i, j] = output[0, i, j] * output[0, i, 4]; // mul_conf = obj_conf * cls_conf
+                });
 
-            //        xMin = YoloParser<T>.Clamp(xMin, 0, w - 0); // clip bbox tlx to boundaries
-            //        yMin = YoloParser<T>.Clamp(yMin, 0, h - 0); // clip bbox tly to boundaries
-            //        xMax = YoloParser<T>.Clamp(xMax, 0, w - 1); // clip bbox brx to boundaries
-            //        yMax = YoloParser<T>.Clamp(yMax, 0, h - 1); // clip bbox bry to boundaries
+                Parallel.For(5, m_model.Dimensions, (k) =>
+                {
+                    if (output[0, i, k] <= m_model.MulConfidence) return; // skip low mul_conf results
 
-            //        YoloLabel label = m_model.Labels[k - 5];
+                    float xMin = ((output[0, i, 0] - output[0, i, 2] / 2) - xPad) / gain; // unpad bbox tlx to original
+                    float yMin = ((output[0, i, 1] - output[0, i, 3] / 2) - yPad) / gain; // unpad bbox tly to original
+                    float xMax = ((output[0, i, 0] + output[0, i, 2] / 2) - xPad) / gain; // unpad bbox brx to original
+                    float yMax = ((output[0, i, 1] + output[0, i, 3] / 2) - yPad) / gain; // unpad bbox bry to original
 
-            //        var prediction = new YoloPrediction(label, output[0, i, k])
-            //        {
-            //            Rectangle = new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin)
-            //        };
+                    xMin = YoloParser<T>.Clamp(xMin, 0, w - 0); // clip bbox tlx to boundaries
+                    yMin = YoloParser<T>.Clamp(yMin, 0, h - 0); // clip bbox tly to boundaries
+                    xMax = YoloParser<T>.Clamp(xMax, 0, w - 1); // clip bbox brx to boundaries
+                    yMax = YoloParser<T>.Clamp(yMax, 0, h - 1); // clip bbox bry to boundaries
 
-            //        result.Add(prediction);
-            //    });
-            //});
+                    YoloLabel label = m_model.Labels[k - 5];
+
+                    var prediction = new YoloPrediction(label, output[0, i, k])
+                    {
+                        Rectangle = new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin)
+                    };
+
+                    result.Add(prediction);
+                });
+            });
 
             return result;
         }

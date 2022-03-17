@@ -95,11 +95,14 @@ namespace Deltatre.BallDetector.Onnx.Demo
             return model;
         }
 
-        internal class ModelRawPrediction {
-            public string ImagePath;
-            public string Label;
-            public float[] output;
-        }
+        // Needed for the alternative with CreateEnumerable
+        //internal class ModelRawPrediction
+        //{
+        //    public string ImagePath;
+        //    public string Label;
+        //    public float[] output;
+        //}
+
         private IEnumerable<ImagePrediction> PredictDataUsingModel(IDataView testData, ITransformer model)
         {
             var results = new List<ImagePrediction>();
@@ -107,11 +110,15 @@ namespace Deltatre.BallDetector.Onnx.Demo
             // Measure prediction execution time
             var watch = System.Diagnostics.Stopwatch.StartNew();
 
+            // Score data
             IDataView scoredData = model.Transform(testData);
 
-            //var data = m_mlContext.Data.CreateEnumerable<ModelRawPrediction>(scoredData, reuseRowObject: true);
-
-            //// see: https://docs.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/inspect-intermediate-data-ml-net
+            // See: https://docs.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/inspect-intermediate-data-ml-net
+            //      https://github.com/dotnet/machinelearning/blob/main/docs/code/VBufferCareFeeding.md
+            //      https://github.com/dotnet/machinelearning/blob/main/src/Microsoft.ML.OnnxTransformer/OnnxTransform.cs
+            //      https://stackoverflow.com/questions/64357642/how-to-load-image-from-memory-with-bitmap-or-byte-array-for-image-processing-in
+            //      https://docs.microsoft.com/en-us/dotnet/api/microsoft.ml.imageestimatorscatalog.extractpixels?view=ml-dotnet
+            //      https://stackoverflow.com/questions/70880362/transform-densetensor-in-microsoft-ml-onnxruntime
 
             // Get DataViewSchema of IDataView
             DataViewSchema columns = scoredData.Schema;
@@ -145,6 +152,8 @@ namespace Deltatre.BallDetector.Onnx.Demo
                 }
             }
 
+            // Alternative (more memory-hungry):
+            //var data = m_mlContext.Data.CreateEnumerable<ModelRawPrediction>(scoredData, reuseRowObject: true);
             //foreach (var imageData in data)
             //{
             //    using var image = Image.FromFile(imageData.ImagePath);
@@ -152,13 +161,12 @@ namespace Deltatre.BallDetector.Onnx.Demo
             //    results.Add(new ImagePrediction { ImagePath = imageData.ImagePath, DetectedObjects = m_outputParser.ParseOutput(new[] { output }, image.Width, image.Height), ImageName = imageData.Label, ModelInputWidth = m_model.Width, ModelInputHeight = m_model.Height, ResizeDetections = false });
             //}
 
-
             // Stop measuring time
             watch.Stop();
-            Console.WriteLine($"Predictions took {watch.ElapsedMilliseconds}ms ({watch.ElapsedMilliseconds/counter}ms per prediction)");
+            Console.WriteLine($"Predictions took {watch.ElapsedMilliseconds}ms ({watch.ElapsedMilliseconds / counter}ms per prediction)");
 
             return results;
-        } 
+        }
         #endregion
     }
 }

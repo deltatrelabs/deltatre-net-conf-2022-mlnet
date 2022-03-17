@@ -1,4 +1,5 @@
 ﻿// Based on: https://github.com/mentalstack/yolov5-net
+// See also: http://www.xavierdupre.fr/app/mlprodict/helpsphinx/blog/2021/2021-07-09_csharp.html
 
 namespace Deltatre.BallDetector.Onnx.Demo
 {
@@ -194,7 +195,7 @@ namespace Deltatre.BallDetector.Onnx.Demo
             };
 
             resized?.Dispose();
-            
+
             return output.ToArray();
         }
         #endregion
