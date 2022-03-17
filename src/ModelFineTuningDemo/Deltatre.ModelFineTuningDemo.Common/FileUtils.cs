@@ -20,7 +20,7 @@ namespace Deltatre.ModelFineTuningDemo.Common
                     {
                         if (!char.IsLetter(label[index]))
                         {
-                            label = label.Substring(0, index);
+                            label = label[..index];
                             break;
                         }
                     }

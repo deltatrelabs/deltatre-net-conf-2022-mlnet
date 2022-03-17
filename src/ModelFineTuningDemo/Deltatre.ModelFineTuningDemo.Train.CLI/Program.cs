@@ -1,5 +1,13 @@
 ﻿// Based on: https://github.com/dotnet/machinelearning-samples/tree/main/samples/csharp/getting-started/DeepLearning_ImageClassification_Training
 
+// References:
+// https://docs.microsoft.com/en-us/dotnet/machine-learning/tutorials/image-classification
+// https://levelup.gitconnected.com/training-an-ml-net-image-classification-model-on-gpus-using-google-colab-ee40b38af7e5
+//
+// For GPU -- SciSharp.Tensorflow --> GPU v2.3.1
+// See:
+// - https://stackoverflow.com/questions/65542317/how-to-speed-up-the-adding-visible-gpu-devices-process-in-tensorflow-with-a-30
+// - https://stackoverflow.com/questions/39649102/how-do-i-select-which-gpu-to-run-a-job-on
 using Deltatre.ModelFineTuningDemo.Common;
 using Deltatre.ModelFineTuningDemo.Train.Model;
 using Microsoft.ML;
@@ -15,8 +23,7 @@ var outputFolder = Path.Combine(datasetPath, "SampleData", "Outputs");
 var trainingDatasetFolder = Path.Combine(datasetFolder, "Training");
 var testDatasetFolder = Path.Combine(datasetFolder, "Test");
 
-var modelFilePath = Path.Combine(datasetPath, "SampleData", "MLModels", "Tensorflow.zip");
-
+var modelFilePath = Path.Combine(datasetPath, "SampleData", "MLModels", "TF_Sport_Classification.zip");
 
 var mlContext = new MLContext(seed: 678);
 
@@ -32,7 +39,7 @@ IDataView shuffledDataset = mlContext.Data.ShuffleRows(trainingDataset);
 // 3. Load Images with in-memory type within the IDataView and Transform Labels to Keys (Categorical)
 IDataView shuffledImagesDataset = mlContext.Transforms.Conversion.
         MapValueToKey(outputColumnName: "LabelAsKey", inputColumnName: "Label", keyOrdinality: KeyOrdinality.ByValue)
-    .Append(mlContext.Transforms.LoadRawImageBytes(outputColumnName: "Image",imageFolder: trainingDatasetFolder, inputColumnName: "ImagePath"))
+    .Append(mlContext.Transforms.LoadRawImageBytes(outputColumnName: "Image", imageFolder: trainingDatasetFolder, inputColumnName: "ImagePath"))
     .Fit(shuffledDataset)
     .Transform(shuffledDataset);
 

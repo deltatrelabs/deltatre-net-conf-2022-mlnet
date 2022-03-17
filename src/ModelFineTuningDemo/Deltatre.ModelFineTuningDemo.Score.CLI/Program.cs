@@ -13,7 +13,7 @@ var trainingDatasetFolder = Path.Combine(datasetFolder, "Training");
 var validationDatasetFolder = Path.Combine(datasetFolder, "Validation");
 var testDatasetFolder = Path.Combine(datasetFolder, "Test");
 
-var modelFilePath = Path.Combine(datasetPath, "SampleData", "MLModels", "Tensorflow.zip");
+var modelFilePath = Path.Combine(datasetPath, "SampleData", "MLModels", "TF_Sport_Classification.zip");
 
 try
 {
@@ -32,9 +32,9 @@ try
 
     // Measure prediction execution time
     var watch = System.Diagnostics.Stopwatch.StartNew();
-    
+
     // Predict all images in the folder
-    
+
     Console.WriteLine("");
     Console.WriteLine($"Predicting images from '{testDatasetFolder}'");
 
