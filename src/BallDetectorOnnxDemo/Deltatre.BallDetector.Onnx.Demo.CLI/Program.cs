@@ -25,15 +25,15 @@ try
     Console.WriteLine("===== Identify objects in the images =====");
     Console.WriteLine("");
 
-    // Create instance of model scorer (using ML.NET OnnxTransform)
-    var modelScorer1 = new OnnxTransformModelScorer<YoloCocoP5Model>(mlContext);
+    //// Create instance of model scorer (using ML.NET OnnxTransform)
+    //var modelScorer1 = new OnnxTransformModelScorer<Yolov5x6Model>(mlContext);
 
     // Create instance of model scorer (using OnnxRuntime)
-    var modelScorer2 = new OnnxRuntimeModelScorer<YoloCocoP5Model>(mlContext);
+    var modelScorer2 = new OnnxRuntimeModelScorer<Yolov5x6Model>(mlContext);
 
-    // Use model to score data
-    var results1 = modelScorer1.Score(imageDataView);
-    LogDetectedObjects(results1);
+    //// Use model to score data
+    //var results1 = modelScorer1.Score(imageDataView);
+    //LogDetectedObjects(results1);
 
     var results2 = modelScorer2.Score(imageDataView);
     LogDetectedObjects(results2);
