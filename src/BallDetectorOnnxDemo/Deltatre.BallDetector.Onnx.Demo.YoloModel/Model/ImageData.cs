@@ -19,7 +19,7 @@ namespace Deltatre.BallDetector.Onnx.Demo.Model
         {
             return Directory
                 .GetFiles(imageFolder)
-                .Where(filePath => Path.GetExtension(filePath) != ".md")
+                .Where(filePath => !Path.GetFileNameWithoutExtension(filePath).StartsWith("ADD_HERE_") && Path.GetExtension(filePath) != ".md")
                 .Select(filePath => new ImageData { ImagePath = filePath, Label = Path.GetFileName(filePath) });
         }
     }
