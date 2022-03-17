@@ -32,10 +32,10 @@ try
     Console.WriteLine("");
 
     // Create instance of model scorer (using ML.NET OnnxTransform)
-    var modelScorer = new OnnxTransformModelScorer<Yolov5sModel>(mlContext);
+    //var modelScorer = new OnnxTransformModelScorer<Yolov5sModel>(mlContext);
 
     // Create instance of model scorer (using OnnxRuntime)
-    //var modelScorer = new OnnxRuntimeModelScorer<Yolov5sModel>(mlContext);
+    var modelScorer = new OnnxRuntimeModelScorer<Yolov5sModel>(mlContext);
 
     // Use model to score data
     var results = modelScorer.Score(imageDataView);
