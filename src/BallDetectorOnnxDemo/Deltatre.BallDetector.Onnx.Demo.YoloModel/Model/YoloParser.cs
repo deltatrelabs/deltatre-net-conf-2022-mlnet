@@ -72,16 +72,6 @@ namespace Deltatre.BallDetector.Onnx.Demo.Model
 
             var (xPad, yPad) = ((m_model.Width - w * gain) / 2, (m_model.Height - h * gain) / 2); // left, right pads
 
-            // For debug only
-            //using (var f = new StreamWriter($"tmp_debug_{m_model.Name}.txt"))
-            //{
-            //    for (int i = 0; i < output.Length / m_model.Dimensions; i++)
-            //    {
-            //        for (int j = 0; j < m_model.Dimensions; j++)
-            //            f.WriteLine(output[0, i, j]);
-            //    }
-            //}
-
             Parallel.For(0, (int)output.Length / m_model.Dimensions, (i) =>
             {
                 if (output[0, i, 4] <= m_model.Confidence) return; // skip low obj_conf results
