@@ -81,8 +81,6 @@ namespace Deltatre.BallDetector.Onnx.Demo
             // Create IDataView from empty list to obtain input data schema
             var data = m_mlContext.Data.LoadFromEnumerable(new List<ImageData>());
 
-            // PLEASE VERIFY https://stackoverflow.com/questions/57264865/cant-get-input-column-name-of-onnx-model-to-work
-
             // Define scoring pipeline
             var pipeline = m_mlContext.Transforms.LoadImages(outputColumnName: "images", imageFolder: string.Empty, inputColumnName: nameof(ImageData.ImagePath))
                             .Append(m_mlContext.Transforms.ResizeImages(outputColumnName: "images", imageWidth: m_model.Width, imageHeight: m_model.Height, inputColumnName: "images"))
@@ -112,13 +110,6 @@ namespace Deltatre.BallDetector.Onnx.Demo
 
             // Score data
             IDataView scoredData = model.Transform(testData);
-
-            // See: https://docs.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/inspect-intermediate-data-ml-net
-            //      https://github.com/dotnet/machinelearning/blob/main/docs/code/VBufferCareFeeding.md
-            //      https://github.com/dotnet/machinelearning/blob/main/src/Microsoft.ML.OnnxTransformer/OnnxTransform.cs
-            //      https://stackoverflow.com/questions/64357642/how-to-load-image-from-memory-with-bitmap-or-byte-array-for-image-processing-in
-            //      https://docs.microsoft.com/en-us/dotnet/api/microsoft.ml.imageestimatorscatalog.extractpixels?view=ml-dotnet
-            //      https://stackoverflow.com/questions/70880362/transform-densetensor-in-microsoft-ml-onnxruntime
 
             // Get DataViewSchema of IDataView
             DataViewSchema columns = scoredData.Schema;
@@ -152,7 +143,9 @@ namespace Deltatre.BallDetector.Onnx.Demo
                 }
             }
 
-            // Alternative (more memory-hungry):
+            // Alternative way (more memory-hungry)
+            // Uncomment also the helper DTO ModelRawPrediction define above
+
             //var data = m_mlContext.Data.CreateEnumerable<ModelRawPrediction>(scoredData, reuseRowObject: true);
             //foreach (var imageData in data)
             //{

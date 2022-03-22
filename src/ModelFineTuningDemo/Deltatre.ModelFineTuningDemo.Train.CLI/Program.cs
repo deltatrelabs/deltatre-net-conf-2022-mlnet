@@ -1,13 +1,5 @@
 ﻿// Based on: https://github.com/dotnet/machinelearning-samples/tree/main/samples/csharp/getting-started/DeepLearning_ImageClassification_Training
 
-// References:
-// https://docs.microsoft.com/en-us/dotnet/machine-learning/tutorials/image-classification
-// https://levelup.gitconnected.com/training-an-ml-net-image-classification-model-on-gpus-using-google-colab-ee40b38af7e5
-//
-// For GPU -- SciSharp.Tensorflow --> GPU v2.3.1
-// See:
-// - https://stackoverflow.com/questions/65542317/how-to-speed-up-the-adding-visible-gpu-devices-process-in-tensorflow-with-a-30
-// - https://stackoverflow.com/questions/39649102/how-do-i-select-which-gpu-to-run-a-job-on
 using Deltatre.ModelFineTuningDemo.Common;
 using Deltatre.ModelFineTuningDemo.Train.Model;
 using Microsoft.ML;

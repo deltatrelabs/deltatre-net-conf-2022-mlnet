@@ -9,8 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="SampleData-internal\**" />
     <Compile Remove="SampleData\**" />
+    <EmbeddedResource Remove="SampleData-internal\**" />
     <EmbeddedResource Remove="SampleData\**" />
+    <None Remove="SampleData-internal\**" />
     <None Remove="SampleData\**" />
   </ItemGroup>
 

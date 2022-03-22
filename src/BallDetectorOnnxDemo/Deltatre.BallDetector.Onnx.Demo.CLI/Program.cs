@@ -1,15 +1,9 @@
-﻿using System.Diagnostics;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Drawing.Drawing2D;
 using Deltatre.BallDetector.Onnx.Demo;
 using Deltatre.BallDetector.Onnx.Demo.MLModels;
 using Deltatre.BallDetector.Onnx.Demo.Model;
 using Microsoft.ML;
-
-// References:
-// https://docs.microsoft.com/en-us/dotnet/machine-learning/resources/transforms
-// https://towardsdatascience.com/mask-detection-using-yolov5-ae40979227a6
-// see also: https://dev.to/azure/onnx-no-it-s-not-a-pokemon-deploy-your-onnx-model-with-c-and-azure-functions-28f
 
 var datasetRelativePath = @"../../../";
 string datasetPath = GetAbsolutePath(datasetRelativePath);
@@ -31,11 +25,14 @@ try
     Console.WriteLine("===== Identify objects in the images =====");
     Console.WriteLine("");
 
+    // PICK AN ALTERNATIVE METHOD TO SCORE A MODEL:
+    // uncomment one of the two following modelScorer
+
     // Create instance of model scorer (using ML.NET OnnxTransform)
     //var modelScorer = new OnnxTransformModelScorer<Yolov5sModel>(mlContext);
 
     // Create instance of model scorer (using OnnxRuntime)
-    var modelScorer = new OnnxRuntimeModelScorer<Yolov5sModel>(mlContext);
+    var modelScorer = new OnnxRuntimeModelScorer<Yolov5x6Model>(mlContext);
 
     // Use model to score data
     var results = modelScorer.Score(imageDataView);
