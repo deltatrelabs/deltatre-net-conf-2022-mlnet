@@ -32,7 +32,7 @@ To setup a local copy, just clone the repository and open the solution for the d
 Before executing the application, you need to:
 
 - place all the images you want to process in the `src\BallDetectorOnnxDemo\Deltatre.BallDetector.Onnx.Demo.CLI\SampleData` folder
-- download pre-trained Yolov5 ONNX models from [Ultralytics GitHub repository](https://github.com/ultralytics/yolov5/releases) and place them in the `src\BallDetectorOnnxDemo\Deltatre.BallDetector.Onnx.Demo.YoloModel\Assets\ModelWeights` folder
+- download pre-trained YOLOv5 ONNX models from [Ultralytics GitHub repository](https://github.com/ultralytics/yolov5/releases) and place them in the `src\BallDetectorOnnxDemo\Deltatre.BallDetector.Onnx.Demo.YoloModel\Assets\ModelWeights` folder
 
 To start the scoring application, set the `Deltatre.BallDetector.Onnx.Demo.CLI` project as *Startup project*, and launch a debug session. It will load the configured YOLOv5 pre-trained model and score all the images in the `SampleData` folder. All results will be saved in the `Outputs` folder.
 
@@ -114,36 +114,86 @@ To start the scoring application, set the `Deltatre.ModelFineTuningDemo.Score.CL
 
 > If you want to use GPU for training/inference, you need to replace the `SciSharp.Tensorflow` package with the proper GPU-enabled version. Please keep in mind that, as of ML.NET version 1.7.1, the latest supported version is v2.3.1. More recent versions do not work.
 
-### Export yolov5 in ONNX model format
+### Export YOLOv5 in ONNX model format
 
-**TBD**
+Taking into account that the training times for YOLOv5n/s/m/l/x are 1/2/4/6/8 days on an [NVIDIA V100 GPU](https://www.nvidia.com/en-us/data-center/a100/), the fastest way is to download pre-trained models from PyTorch and convert them into the [ONNX](https://onnx.ai/) model format.
 
-https://github.com/ultralytics/yolov5/releases
+The first step is to clone [Ultralytics](https://ultralytics.com/)'s YOLOv5 repository.
 
-git clone https://github.com/ultralytics/yolov5  # clone
+```ps
+git clone https://github.com/ultralytics/yolov5
 cd yolov5
+```
+
+Optionally, but suggested, create and activete a [Python >= 3.7.0 Virtual Environment](https://docs.python.org/3/library/venv.html). Using Virtual Environments allows you to avoid installing Python packages globally which could break system tools or other projects. 
+
+```ps
+python -m pip install --upgrade pip
+python -m pip install --user virtualenv
 python -m venv venv
 venv\Scripts\activate
+```
+
+>For this demo we used Python 3.9.6  
+
+Install all the requirements.
+
+```ps 
 python -m pip install --upgrade pip
 pip install wheel
-pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
-#Comment torch, torchvision within requirements.txt file.
+```
+
+>If you have an NVIDIA GPU we suggest intalling the latest version of Pytorch with CUDA support, otherwise will be installed the package that doesn't support GPU acceleration.  
+>For more details please refer to the official [PyTorch](https://pytorch.org/) page.  
+>In this demo, we used Pytorch 1.11.0, and TorchVision 0.12.0 compiled for CUDA 11.3. You can install them with with:
+>
+>```ps 
+>pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+>```
+
+Edit the file ***requirements.txt*** and uncomment the **onnx** package.
+
+>If you have already installed PyTorch and TorchVision for CUDA, comment **torch** and **torchvision** packages.
+
+Now install ***requirements.txt***
+
+>```ps 
 pip install -r requirements.txt
-pip install onnx
+```
 
-#Example on how to convert yolo5x6 model in onnx model format.
-#Note: Take aware in specify the right model image size.
-#python export.py --weights yolov5x6.pt --device 1 --imgsz 1280 1280 --include onnx
+Now we can export pre-trained models:
 
+```ps
+python export.py --weights yolov5n.pt --imgsz 640 640 --include onnx
+python export.py --weights yolov5s.pt --imgsz 640 640 --include onnx
+python export.py --weights yolov5m.pt --imgsz 640 640 --include onnx
+python export.py --weights yolov5l.pt --imgsz 640 640 --include onnx
+python export.py --weights yolov5x.pt --imgsz 640 640 --include onnx
+python export.py --weights yolov5n6.pt --imgsz 1280 1280 --include onnx
+python export.py --weights yolov5s6.pt --imgsz 1280 1280 --include onnx
+python export.py --weights yolov5m6.pt --imgsz 1280 1280 --include onnx
+python export.py --weights yolov5l6.pt --imgsz 1280 1280 --include onnx
+python export.py --weights yolov5x6.pt --imgsz 1280 1280 --include onnx
+```
 
-### Model Optimization
-
-**TBD**
-
-https://github.com/daquexian/onnx-simplifier
-pip install onnx-simplifier
-onnxsim input_onnx_model output_onnx_model
-
+>It is not required to export all the pre-trained models. Please, check on the [YOLOv5 pre-trained model release page](https://github.com/ultralytics/yolov5/releases) for the ones that fit the requirements.
+>We can specify the ***GPU id*** to use with the ***--device*** option. For example, if we want to export the pre-trained model YOLOv5x6 in ONNX format using the first CUDA GPU capable on our machine, we can run the following command:
+>
+>```ps
+>python export.py --weights yolov5x6.pt --imgsz 1280 1280 --include onnx --device 0
+>```
+>
+>For visualizing exported models we can use [**Netron** viewer](https://github.com/lutzroeder/netron).   
+>We can install it with:
+>
+>```ps
+>pip install netron
+>```
+>And use ***netron [FILE]*** to visualize the model. For example:
+>
+>```ps
+>netron yolov5x6.pt
+>```
 
 ## References and other useful links
 
