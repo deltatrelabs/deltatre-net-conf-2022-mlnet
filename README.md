@@ -125,7 +125,7 @@ git clone https://github.com/ultralytics/yolov5
 cd yolov5
 ```
 
-Optionally, but suggested, create and activete a [Python >= 3.7.0 Virtual Environment](https://docs.python.org/3/library/venv.html). Using Virtual Environments allows you to avoid installing Python packages globally which could break system tools or other projects. 
+Optionally, but suggested, create and activate a [Python >= 3.7.0 Virtual Environment](https://docs.python.org/3/library/venv.html). Using Virtual Environments allows you to avoid installing Python packages globally which could break system tools or other projects. 
 
 ```ps
 python -m pip install --upgrade pip
@@ -143,9 +143,9 @@ python -m pip install --upgrade pip
 pip install wheel
 ```
 
->If you have an NVIDIA GPU we suggest intalling the latest version of Pytorch with CUDA support, otherwise will be installed the package that doesn't support GPU acceleration.  
+>If you have an NVIDIA GPU we suggest intalling the latest version of Pytorch with CUDA support, otherwise the package with CPU-only support will be installed. 
 >For more details please refer to the official [PyTorch](https://pytorch.org/) page.  
->In this demo, we used Pytorch 1.11.0, and TorchVision 0.12.0 compiled for CUDA 11.3. You can install them with with:
+>In this demo, we used Pytorch 1.11.0, and TorchVision 0.12.0 compiled for CUDA 11.3. You can install them with:
 >
 >```ps 
 >pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
